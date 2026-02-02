@@ -138,6 +138,39 @@ To change the default port (3000), update:
 
 Service data is stored in the `./data` directory, which is mounted as a volume in Docker. This ensures your services persist across container restarts.
 
+## Security Considerations
+
+### Rate Limiting
+
+Dasher does not include application-level rate limiting to maintain compatibility with reverse proxies. **If you expose Dasher publicly, you must configure rate limiting on your reverse proxy** to protect against brute force attacks and abuse.
+
+**Recommended reverse proxy options:**
+- **HAProxy** - Use `stick-table` for rate limiting
+- **Nginx** - Use `limit_req_zone` and `limit_req` directives
+- **Traefik** - Use rate limiting middleware
+- **Cloudflare** - Provides rate limiting at the edge
+
+**Example nginx rate limiting:**
+```nginx
+http {
+    limit_req_zone $binary_remote_addr zone=login:10m rate=5r/m;
+    
+    server {
+        location /api/login {
+            limit_req zone=login burst=2 nodelay;
+            proxy_pass http://dasher:3000;
+        }
+    }
+}
+```
+
+### Authentication
+
+- Always use strong passwords and bcrypt hashing
+- Set a random `SESSION_SECRET` in production
+- Keep `.env` files out of version control
+- Use HTTPS through your reverse proxy for production deployments
+
 ## ScreenShots
 ![Dashboard Screenshot](./images/Dashboard-Screenshot.png)
 ![Add Service Modal](./images/Add-Service.png)

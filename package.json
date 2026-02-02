@@ -16,8 +16,7 @@
     "express-session": "^1.17.3",
     "bcryptjs": "^2.4.3",
     "csurf": "^1.11.0",
-    "cookie-parser": "^1.4.6",
-    "express-rate-limit": "^7.1.5"
+    "cookie-parser": "^1.4.6"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

@@ -4,7 +4,6 @@ const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const csrf = require('csurf');
 const cookieParser = require('cookie-parser');
-const rateLimit = require('express-rate-limit');
 const fs = require('fs').promises;
 const path = require('path');
 
@@ -27,34 +26,17 @@ app.use(cookieParser());
 app.use(session({
   secret: SESSION_SECRET,
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true,
   cookie: {
-    secure: process.env.NODE_ENV === 'production' || process.env.SECURE_COOKIES === 'true',
-    sameSite: 'strict',
+    secure: false,
+    sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000,
     httpOnly: true
   }
 }));
 
 // CSRF protection
-const csrfProtection = csrf({ cookie: false });
-
-// Rate limiting
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts per windowMs
-  message: 'Too many login attempts, please try again later',
-  standardHeaders: true,
-  legacyHeaders: false
-});
-
-const apiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 100, // 100 requests per minute
-  message: 'Too many requests, please try again later',
-  standardHeaders: true,
-  legacyHeaders: false
-});
+const csrfProtection = csrf({ cookie: true });
 
 app.use(express.static('public'));
 
@@ -81,12 +63,12 @@ async function ensureDataDir() {
 }
 
 // Get CSRF token for login
-app.get('/api/csrf-token', apiLimiter, csrfProtection, (req, res) => {
+app.get('/api/csrf-token', csrfProtection, (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
 
 // Login
-app.post('/api/login', loginLimiter, csrfProtection, async (req, res) => {
+app.post('/api/login', csrfProtection, async (req, res) => {
   const { username, password } = req.body || {};
 
   if (!AUTH_ENABLED) {
@@ -95,14 +77,18 @@ app.post('/api/login', loginLimiter, csrfProtection, async (req, res) => {
 
   if (username === AUTH_USERNAME && await bcrypt.compare(password || '', AUTH_PASSWORD_HASH)) {
     req.session.authenticated = true;
-    return res.json({ success: true });
+    req.session.save((err) => {
+      if (err) return res.status(500).json({ error: 'Failed to save session' });
+      res.json({ success: true });
+    });
+    return;
   }
 
   return res.status(401).json({ error: 'Invalid credentials' });
 });
 
 // Logout
-app.post('/api/logout', apiLimiter, (req, res) => {
+app.post('/api/logout', (req, res) => {
   req.session.destroy(() => {
     res.json({ success: true });
   });
@@ -117,7 +103,7 @@ app.get('/api/auth-status', (req, res) => {
 });
 
 // Get all services
-app.get('/api/services', apiLimiter, requireAuth, async (req, res) => {
+app.get('/api/services', requireAuth, async (req, res) => {
   try {
     const data = await fs.readFile(DATA_FILE, 'utf8');
     res.json(JSON.parse(data));
@@ -127,7 +113,7 @@ app.get('/api/services', apiLimiter, requireAuth, async (req, res) => {
 });
 
 // Save services
-app.post('/api/services', apiLimiter, csrfProtection, requireAuth, async (req, res) => {
+app.post('/api/services', csrfProtection, requireAuth, async (req, res) => {
   try {
     await fs.writeFile(DATA_FILE, JSON.stringify(req.body, null, 2));
     res.json({ success: true });
