@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
+const csrf = require('csurf');
+const cookieParser = require('cookie-parser');
 const fs = require('fs').promises;
 const path = require('path');
 
@@ -16,6 +18,7 @@ const SESSION_SECRET = process.env.SESSION_SECRET || 'dasher-secret-change-this'
 
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 
 app.use(session({
   secret: SESSION_SECRET,
@@ -23,9 +26,13 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     secure: false,
-    maxAge: 24 * 60 * 60 * 1000
+    maxAge: 24 * 60 * 60 * 1000,
+    httpOnly: true
   }
 }));
+
+// CSRF protection
+const csrfProtection = csrf({ cookie: false });
 
 app.use(express.static('public'));
 
@@ -51,8 +58,13 @@ async function ensureDataDir() {
   }
 }
 
+// Get CSRF token for login
+app.get('/api/csrf-token', csrfProtection, (req, res) => {
+  res.json({ csrfToken: req.csrfToken() });
+});
+
 // Login
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', csrfProtection, async (req, res) => {
   const { username, password } = req.body || {};
 
   if (!AUTH_ENABLED) {
@@ -93,7 +105,7 @@ app.get('/api/services', requireAuth, async (req, res) => {
 });
 
 // Save services
-app.post('/api/services', requireAuth, async (req, res) => {
+app.post('/api/services', csrfProtection, requireAuth, async (req, res) => {
   try {
     await fs.writeFile(DATA_FILE, JSON.stringify(req.body, null, 2));
     res.json({ success: true });

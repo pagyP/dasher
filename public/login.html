@@ -66,17 +66,39 @@
         const form = document.getElementById('loginForm');
         const errorDiv = document.getElementById('loginError');
 
+        // Fetch CSRF token on page load
+        async function getCsrfToken() {
+            try {
+                const response = await fetch('/api/csrf-token');
+                const data = await response.json();
+                return data.csrfToken;
+            } catch (error) {
+                console.error('Failed to fetch CSRF token:', error);
+                return null;
+            }
+        }
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             errorDiv.classList.remove('show');
 
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            const csrfToken = await getCsrfToken();
+
+            if (!csrfToken) {
+                errorDiv.textContent = 'Security token unavailable. Please refresh and try again.';
+                errorDiv.classList.add('show');
+                return;
+            }
 
             try {
                 const response = await fetch('/api/login', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'csrf-token': csrfToken
+                    },
                     body: JSON.stringify({ username, password })
                 });
 

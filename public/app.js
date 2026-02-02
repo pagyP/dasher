@@ -2,6 +2,7 @@
 let services = [];
 let categories = [];
 let editingServiceId = null;
+let csrfToken = null;
 
 // DOM Elements
 const modal = document.getElementById('modal');
@@ -16,6 +17,17 @@ const iconPicker = document.getElementById('iconPicker');
 const logoutBtn = document.getElementById('logoutBtn');
 
 let collapsedCategories = JSON.parse(localStorage.getItem('collapsedCategories')) || [];
+
+// Fetch CSRF token
+async function fetchCsrfToken() {
+    try {
+        const response = await fetch('/api/csrf-token');
+        const data = await response.json();
+        csrfToken = data.csrfToken;
+    } catch (error) {
+        console.error('Failed to fetch CSRF token:', error);
+    }
+}
 
 const iconSet = [
     { label: 'pfSense', icon: 'https://cdn.simpleicons.org/pfsense' },
@@ -53,6 +65,7 @@ const iconSet = [
 
 // Initialize
 async function init() {
+    await fetchCsrfToken();
     const authStatus = await checkAuthStatus();
     if (!authStatus.authenticated) {
         window.location.href = '/login.html';
@@ -106,10 +119,18 @@ async function loadServices() {
 
 // Save services to backend
 async function saveServices() {
+    if (!csrfToken) {
+        console.error('CSRF token not available');
+        alert('Failed to save services - security token missing');
+        return;
+    }
     try {
         await fetch('/api/services', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'csrf-token': csrfToken
+            },
             body: JSON.stringify({ services, categories })
         });
     } catch (error) {
