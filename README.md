@@ -11,6 +11,7 @@ A simple, dark-themed home lab dashboard for managing links to your self-hosted 
 - 📂 Automatic grouping by categories
 - 💾 Persistent storage via JSON file
 - 🐳 Docker Compose deployment
+- 🔐 Optional basic authentication
 
 ## Quick Start
 
@@ -59,6 +60,32 @@ Services are stored in `data/services.json`. The file is automatically created o
   "description": "Optional description"
 }
 ```
+
+### Authentication
+
+To enable basic authentication, set these environment variables in [docker-compose.yml](docker-compose.yml):
+
+```yaml
+environment:
+  - AUTH_ENABLED=true
+  - AUTH_USERNAME=yourusername
+  - AUTH_PASSWORD_HASH=$2a$10$your-bcrypt-hash-here
+  - SESSION_SECRET=your-random-secret-key
+```
+
+Generate a bcrypt hash for your password:
+
+```bash
+node -e "console.log(require('bcryptjs').hashSync('yourpassword', 10))"
+```
+
+If you don’t have Node installed locally, use Docker instead:
+
+```bash
+docker run --rm node:18-alpine node -e "console.log(require('bcryptjs').hashSync('yourpassword', 10))"
+```
+
+Default credentials when `AUTH_ENABLED=true` without custom hash: `admin` / `admin`
 
 ## Usage
 

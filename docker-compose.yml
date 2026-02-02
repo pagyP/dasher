@@ -11,3 +11,7 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
+      - AUTH_ENABLED=false
+      # - AUTH_USERNAME=admin
+      # - AUTH_PASSWORD_HASH=$2a$10$your-bcrypt-hash-here
+      # - SESSION_SECRET=your-secret-key-here

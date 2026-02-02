@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const session = require('express-session');
+const bcrypt = require('bcryptjs');
 const fs = require('fs').promises;
 const path = require('path');
 
@@ -7,9 +9,32 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'data', 'services.json');
 
+const AUTH_ENABLED = process.env.AUTH_ENABLED === 'true';
+const AUTH_USERNAME = process.env.AUTH_USERNAME || 'admin';
+const AUTH_PASSWORD_HASH = process.env.AUTH_PASSWORD_HASH || bcrypt.hashSync('admin', 10);
+const SESSION_SECRET = process.env.SESSION_SECRET || 'dasher-secret-change-this';
+
 app.use(cors());
 app.use(express.json());
+
+app.use(session({
+  secret: SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false,
+    maxAge: 24 * 60 * 60 * 1000
+  }
+}));
+
 app.use(express.static('public'));
+
+function requireAuth(req, res, next) {
+  if (!AUTH_ENABLED || req.session.authenticated) {
+    return next();
+  }
+  return res.status(401).json({ error: 'Unauthorized' });
+}
 
 // Ensure data directory exists
 async function ensureDataDir() {
@@ -26,8 +51,39 @@ async function ensureDataDir() {
   }
 }
 
+// Login
+app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body || {};
+
+  if (!AUTH_ENABLED) {
+    return res.json({ success: true });
+  }
+
+  if (username === AUTH_USERNAME && await bcrypt.compare(password || '', AUTH_PASSWORD_HASH)) {
+    req.session.authenticated = true;
+    return res.json({ success: true });
+  }
+
+  return res.status(401).json({ error: 'Invalid credentials' });
+});
+
+// Logout
+app.post('/api/logout', (req, res) => {
+  req.session.destroy(() => {
+    res.json({ success: true });
+  });
+});
+
+// Auth status
+app.get('/api/auth-status', (req, res) => {
+  res.json({
+    authEnabled: AUTH_ENABLED,
+    authenticated: !AUTH_ENABLED || req.session.authenticated || false
+  });
+});
+
 // Get all services
-app.get('/api/services', async (req, res) => {
+app.get('/api/services', requireAuth, async (req, res) => {
   try {
     const data = await fs.readFile(DATA_FILE, 'utf8');
     res.json(JSON.parse(data));
@@ -37,7 +93,7 @@ app.get('/api/services', async (req, res) => {
 });
 
 // Save services
-app.post('/api/services', async (req, res) => {
+app.post('/api/services', requireAuth, async (req, res) => {
   try {
     await fs.writeFile(DATA_FILE, JSON.stringify(req.body, null, 2));
     res.json({ success: true });

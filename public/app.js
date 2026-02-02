@@ -13,6 +13,7 @@ const servicesContainer = document.getElementById('servicesContainer');
 const searchInput = document.getElementById('searchInput');
 const modalTitle = document.getElementById('modalTitle');
 const iconPicker = document.getElementById('iconPicker');
+const logoutBtn = document.getElementById('logoutBtn');
 
 let collapsedCategories = JSON.parse(localStorage.getItem('collapsedCategories')) || [];
 
@@ -52,10 +53,41 @@ const iconSet = [
 
 // Initialize
 async function init() {
+    const authStatus = await checkAuthStatus();
+    if (!authStatus.authenticated) {
+        window.location.href = '/login.html';
+        return;
+    }
+
     await loadServices();
     renderIconPicker();
     renderServices();
     setupEventListeners();
+}
+
+async function checkAuthStatus() {
+    try {
+        const response = await fetch('/api/auth-status');
+        const status = await response.json();
+
+        if (status.authEnabled && logoutBtn) {
+            logoutBtn.style.display = 'block';
+        }
+
+        return status;
+    } catch (error) {
+        console.error('Auth check failed:', error);
+        return { authEnabled: false, authenticated: true };
+    }
+}
+
+async function logout() {
+    try {
+        await fetch('/api/logout', { method: 'POST' });
+        window.location.href = '/login.html';
+    } catch (error) {
+        console.error('Logout failed:', error);
+    }
 }
 
 // Load services from backend
@@ -399,6 +431,10 @@ function setupEventListeners() {
     cancelBtn.addEventListener('click', closeModal);
     serviceForm.addEventListener('submit', handleSubmit);
     searchInput.addEventListener('input', (e) => renderServices(e.target.value));
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
 
     // Close modal on outside click
     modal.addEventListener('click', (e) => {
