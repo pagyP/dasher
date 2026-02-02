@@ -63,6 +63,7 @@ Services are stored in `data/services.json`. The file is automatically created o
 ## Usage
 
 1. **Add a Service**: Click the "+ Add Service" button in the top right
+   1. A modal will appear where you can enter service details and the category
 2. **Edit a Service**: Click the ✏️ icon on any service card
 3. **Delete a Service**: Click the 🗑️ icon on any service card
 4. **Search**: Use the search bar to filter services by name, category, or description
@@ -91,6 +92,6 @@ To change the default port (3000), update:
 
 Service data is stored in the `./data` directory, which is mounted as a volume in Docker. This ensures your services persist across container restarts.
 
-## License
-
-MIT
+## ScreenShots
+![Dashboard Screenshot](./images/Dashboard-Screenshot.png)
+![Add Service Modal](./images/Add-Service.png)
