@@ -2,6 +2,7 @@
 let services = [];
 let categories = [];
 let editingServiceId = null;
+let csrfToken = null;
 
 // DOM Elements
 const modal = document.getElementById('modal');
@@ -13,8 +14,20 @@ const servicesContainer = document.getElementById('servicesContainer');
 const searchInput = document.getElementById('searchInput');
 const modalTitle = document.getElementById('modalTitle');
 const iconPicker = document.getElementById('iconPicker');
+const logoutBtn = document.getElementById('logoutBtn');
 
 let collapsedCategories = JSON.parse(localStorage.getItem('collapsedCategories')) || [];
+
+// Fetch CSRF token
+async function fetchCsrfToken() {
+    try {
+        const response = await fetch('/api/csrf-token');
+        const data = await response.json();
+        csrfToken = data.csrfToken;
+    } catch (error) {
+        console.error('Failed to fetch CSRF token:', error);
+    }
+}
 
 const iconSet = [
     { label: 'pfSense', icon: 'https://cdn.simpleicons.org/pfsense' },
@@ -52,10 +65,42 @@ const iconSet = [
 
 // Initialize
 async function init() {
+    await fetchCsrfToken();
+    const authStatus = await checkAuthStatus();
+    if (!authStatus.authenticated) {
+        window.location.href = '/login.html';
+        return;
+    }
+
     await loadServices();
     renderIconPicker();
     renderServices();
     setupEventListeners();
+}
+
+async function checkAuthStatus() {
+    try {
+        const response = await fetch('/api/auth-status');
+        const status = await response.json();
+
+        if (status.authEnabled && logoutBtn) {
+            logoutBtn.style.display = 'block';
+        }
+
+        return status;
+    } catch (error) {
+        console.error('Auth check failed:', error);
+        return { authEnabled: false, authenticated: true };
+    }
+}
+
+async function logout() {
+    try {
+        await fetch('/api/logout', { method: 'POST' });
+        window.location.href = '/login.html';
+    } catch (error) {
+        console.error('Logout failed:', error);
+    }
 }
 
 // Load services from backend
@@ -74,10 +119,18 @@ async function loadServices() {
 
 // Save services to backend
 async function saveServices() {
+    if (!csrfToken) {
+        console.error('CSRF token not available');
+        alert('Failed to save services - security token missing');
+        return;
+    }
     try {
         await fetch('/api/services', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'csrf-token': csrfToken
+            },
             body: JSON.stringify({ services, categories })
         });
     } catch (error) {
@@ -399,6 +452,10 @@ function setupEventListeners() {
     cancelBtn.addEventListener('click', closeModal);
     serviceForm.addEventListener('submit', handleSubmit);
     searchInput.addEventListener('input', (e) => renderServices(e.target.value));
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
 
     // Close modal on outside click
     modal.addEventListener('click', (e) => {
