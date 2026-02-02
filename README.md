@@ -18,18 +18,18 @@ A simple, dark-themed home lab dashboard for managing links to your self-hosted 
 
 ```bash
 # Start the dashboard
-docker-compose up -d
+docker compose up -d
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
 # Stop the dashboard
-docker-compose down
+docker compose down
 ```
 
 Access the dashboard at `http://localhost:3000`
 
-### Development Mode
+### Development Mode (optional)
 
 ```bash
 # Install dependencies
@@ -38,6 +38,8 @@ npm install
 # Start development server
 npm run dev
 ```
+
+Note: npm install is only needed for local development. Docker builds install dependencies inside the image.
 
 ## Configuration
 
