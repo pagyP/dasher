@@ -127,11 +127,32 @@ h2 {
     border-radius: 999px;
 }
 
+.category-title:hover {
+    border-color: var(--accent-color);
+    transition: border-color 0.15s;
+}
+
+.category-title::before {
+    content: "▼";
+    display: inline-block;
+    width: 12px;
+    font-size: 0.7rem;
+    transition: transform 0.2s;
+}
+
+.category-title.collapsed::before {
+    transform: rotate(-90deg);
+}
+
 .services-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
     gap: 0.7rem;
     width: 100%;
+}
+
+.services-grid.collapsed {
+    display: none;
 }
 
 .service-card {

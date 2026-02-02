@@ -14,6 +14,8 @@ const searchInput = document.getElementById('searchInput');
 const modalTitle = document.getElementById('modalTitle');
 const iconPicker = document.getElementById('iconPicker');
 
+let collapsedCategories = JSON.parse(localStorage.getItem('collapsedCategories')) || [];
+
 const iconSet = [
     { label: 'pfSense', icon: 'https://cdn.simpleicons.org/pfsense' },
     { label: 'Pi-hole', icon: 'https://cdn.simpleicons.org/pihole' },
@@ -163,21 +165,52 @@ function renderServices(filter = '') {
         const title = document.createElement('h2');
         title.className = 'category-title';
         title.textContent = category;
-        section.appendChild(title);
-
+        title.style.cursor = 'pointer';
+        title.title = 'Click to collapse/expand';
+        
         const grid = document.createElement('div');
         grid.className = 'services-grid';
+        grid.dataset.category = category;
 
         grouped[category].forEach(service => {
             const card = createServiceCard(service);
             grid.appendChild(card);
         });
 
+        // Restore collapsed state
+        if (collapsedCategories.includes(category)) {
+            grid.classList.add('collapsed');
+            title.classList.add('collapsed');
+        }
+
+        // Add collapse toggle (prevent drag on title click)
+        title.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleCategoryCollapse(category, grid, title);
+        });
+
+        section.appendChild(title);
         section.appendChild(grid);
         servicesContainer.appendChild(section);
 
         attachCategoryDragHandlers(section);
     });
+}
+
+// Toggle category collapse and persist state
+function toggleCategoryCollapse(category, gridElement, titleElement) {
+    const isCollapsed = gridElement.classList.toggle('collapsed');
+    titleElement.classList.toggle('collapsed', isCollapsed);
+    
+    if (isCollapsed) {
+        if (!collapsedCategories.includes(category)) {
+            collapsedCategories.push(category);
+        }
+    } else {
+        collapsedCategories = collapsedCategories.filter(c => c !== category);
+    }
+    
+    localStorage.setItem('collapsedCategories', JSON.stringify(collapsedCategories));
 }
 
 // Drag and drop for category panels
