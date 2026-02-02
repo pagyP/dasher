@@ -4,6 +4,7 @@ const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const csrf = require('csurf');
 const cookieParser = require('cookie-parser');
+const rateLimit = require('express-rate-limit');
 const fs = require('fs').promises;
 const path = require('path');
 
@@ -35,6 +36,23 @@ app.use(session({
 // CSRF protection
 const csrfProtection = csrf({ cookie: false });
 
+// Rate limiting
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts per windowMs
+  message: 'Too many login attempts, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // 100 requests per minute
+  message: 'Too many requests, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 app.use(express.static('public'));
 
 function requireAuth(req, res, next) {
@@ -60,12 +78,12 @@ async function ensureDataDir() {
 }
 
 // Get CSRF token for login
-app.get('/api/csrf-token', csrfProtection, (req, res) => {
+app.get('/api/csrf-token', apiLimiter, csrfProtection, (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
 
 // Login
-app.post('/api/login', csrfProtection, async (req, res) => {
+app.post('/api/login', loginLimiter, csrfProtection, async (req, res) => {
   const { username, password } = req.body || {};
 
   if (!AUTH_ENABLED) {
@@ -81,7 +99,7 @@ app.post('/api/login', csrfProtection, async (req, res) => {
 });
 
 // Logout
-app.post('/api/logout', (req, res) => {
+app.post('/api/logout', apiLimiter, (req, res) => {
   req.session.destroy(() => {
     res.json({ success: true });
   });
@@ -96,7 +114,7 @@ app.get('/api/auth-status', (req, res) => {
 });
 
 // Get all services
-app.get('/api/services', requireAuth, async (req, res) => {
+app.get('/api/services', apiLimiter, requireAuth, async (req, res) => {
   try {
     const data = await fs.readFile(DATA_FILE, 'utf8');
     res.json(JSON.parse(data));
@@ -106,7 +124,7 @@ app.get('/api/services', requireAuth, async (req, res) => {
 });
 
 // Save services
-app.post('/api/services', csrfProtection, requireAuth, async (req, res) => {
+app.post('/api/services', apiLimiter, csrfProtection, requireAuth, async (req, res) => {
   try {
     await fs.writeFile(DATA_FILE, JSON.stringify(req.body, null, 2));
     res.json({ success: true });
