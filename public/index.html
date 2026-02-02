@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dasher - Home Lab Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏠 Dasher</h1>
+            <button id="addServiceBtn" class="btn-primary">+ Add Service</button>
+        </header>
+
+        <div id="search-container">
+            <input type="text" id="searchInput" placeholder="Search services..." />
+        </div>
+
+        <main id="servicesContainer">
+            <!-- Services will be rendered here -->
+        </main>
+    </div>
+
+    <!-- Modal for adding/editing services -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Service</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="serviceForm">
+                <div class="form-group">
+                    <label for="serviceName">Name</label>
+                    <input type="text" id="serviceName" required>
+                </div>
+                <div class="form-group">
+                    <label for="serviceUrl">URL</label>
+                    <input type="url" id="serviceUrl" required>
+                </div>
+                <div class="form-group">
+                    <label for="serviceCategory">Category</label>
+                    <input type="text" id="serviceCategory" list="categories" required>
+                    <datalist id="categories"></datalist>
+                </div>
+                <div class="form-group">
+                    <label for="serviceIcon">Icon (emoji or URL)</label>
+                    <input type="text" id="serviceIcon" placeholder="📦">
+                </div>
+                <div class="form-group">
+                    <label>Icon picker</label>
+                    <div id="iconPicker" class="icon-picker"></div>
+                </div>
+                <div class="form-group">
+                    <label for="serviceDescription">Description (optional)</label>
+                    <textarea id="serviceDescription" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Save</button>
+                    <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
