@@ -9,10 +9,12 @@ services:
     volumes:
       - ./data:/app/data
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      - NODE_ENV=production
-      - SECURE_COOKIES=true
-      - AUTH_ENABLED=false
-      # - AUTH_USERNAME=admin
-      # - AUTH_PASSWORD_HASH=$2a$10$your-bcrypt-hash-here
-      # - SESSION_SECRET=your-secret-key-here
+      - NODE_ENV=${NODE_ENV}
+      - SECURE_COOKIES=${SECURE_COOKIES}
+      - AUTH_ENABLED=${AUTH_ENABLED}
+      - AUTH_USERNAME=${AUTH_USERNAME}
+      - AUTH_PASSWORD_HASH=${AUTH_PASSWORD_HASH}
+      - SESSION_SECRET=${SESSION_SECRET}

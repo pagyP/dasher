@@ -63,7 +63,26 @@ Services are stored in `data/services.json`. The file is automatically created o
 
 ### Authentication
 
-To enable basic authentication, set these environment variables in [docker-compose.yml](docker-compose.yml):
+To enable basic authentication, you can either use environment variables in [docker-compose.yml](docker-compose.yml) or use a `.env` file (recommended for keeping secrets out of version control).
+
+#### Using .env file (Recommended)
+
+1. Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Edit `.env` and set your credentials. **Important:** Escape the `$` symbols in your bcrypt hash with backslashes:
+   ```bash
+   AUTH_ENABLED=true
+   AUTH_USERNAME=yourusername
+   AUTH_PASSWORD_HASH="\$2b\$10\$your-bcrypt-hash-here"
+   SESSION_SECRET=your-random-secret-key
+   ```
+
+#### Using docker-compose.yml directly
+
+Alternatively, set these environment variables directly in [docker-compose.yml](docker-compose.yml):
 
 ```yaml
 environment:
@@ -82,7 +101,7 @@ node -e "console.log(require('bcryptjs').hashSync('yourpassword', 10))"
 If you don’t have Node installed locally, use Docker instead:
 
 ```bash
-docker run --rm node:18-alpine node -e "console.log(require('bcryptjs').hashSync('yourpassword', 10))"
+docker run --rm node:18-alpine sh -lc "npm -s i bcryptjs --prefix /tmp/bc >/dev/null 2>&1 && NODE_PATH=/tmp/bc/node_modules node -e 'console.log(require(\"bcryptjs\").hashSync(\"yourpassword\", 10))'"
 ```
 
 Default credentials when `AUTH_ENABLED=true` without custom hash: `admin` / `admin`
