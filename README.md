@@ -1,6 +1,6 @@
 # Dasher 🏠
 
-A simple, dark-themed home lab dashboard for managing links to your self-hosted services.
+A simple, dark-themed home lab dashboard for managing links to your self-hosted services.  This was inspired by my need for a lightweight, customizable dashboard to quickly access my various home lab services. If you need a more feature-rich solution, consider [Heimdall](https://heimdall.site/) or [Dashy](https://demo.dashy.to/).
 
 ## Features
 
@@ -15,6 +15,8 @@ A simple, dark-themed home lab dashboard for managing links to your self-hosted 
 ## Quick Start
 
 ### Using Docker Compose (Recommended)
+
+Clone the repository and navigate to the project directory:
 
 ```bash
 # Start the dashboard
