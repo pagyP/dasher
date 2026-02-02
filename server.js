@@ -12,6 +12,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'data', 'services.json');
 
+// Trust proxy when behind reverse proxy (nginx, Traefik, etc.)
+app.set('trust proxy', true);
+
 const AUTH_ENABLED = process.env.AUTH_ENABLED === 'true';
 const AUTH_USERNAME = process.env.AUTH_USERNAME || 'admin';
 const AUTH_PASSWORD_HASH = process.env.AUTH_PASSWORD_HASH || bcrypt.hashSync('admin', 10);
